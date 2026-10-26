@@ -17,7 +17,7 @@ typedef enum {
 int main (void){
     //configurações da janela
     SetConfigFlags(FLAG_WINDOW_RESIZABLE); //permite que a janela diminua e aumente
-    InitWindow(LARGURA, ALTURA, "Ape Invaders"); //cria a janela inicial
+    InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
     SetTargetFPS(60);
     SetWindowMinSize(400, 300); //tamanho minimo
 
