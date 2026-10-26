@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include <math.h> //fminf(): devolve o menor numero entre dois numeros decimais
+#include <stdio.h>
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
@@ -43,6 +44,18 @@ int main (void){
     int quadro = 0;
     float tempo = 0;
     float duracao = 1.0f / 12.0f;
+    //erro: quando volta para o menu, não volta as vidas, corrigir depois.
+    int vida = 3;
+
+    int pontuacao = 0;
+    int highScore = 0;
+
+    FILE *ficheiro = fopen("highscore.txt", "r");
+
+    if (ficheiro != NULL) {
+        fscanf(ficheiro, "%d", &highScore);
+        fclose(ficheiro);
+    }
 
 while (!WindowShouldClose()) {
 
@@ -56,6 +69,7 @@ while (!WindowShouldClose()) {
     if (tela == TELA_MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
             x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; //macaco começa no meio da tela
+            pontuacao = 0;
             tela = TELA_JOGO;
         }
     }
@@ -66,9 +80,29 @@ while (!WindowShouldClose()) {
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < AREA_X + AREA_LARGURA - TAM_QUADRO) x+= velocidade;}
 
         if (IsKeyPressed(KEY_M)) tela = TELA_MENU;
-        
+
+        if (IsKeyPressed(KEY_H)) {
+            vida--;
+        }
+        if (vida <= 0) {
+                // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
+                if (pontuacao > highScore) {
+                    highScore = pontuacao;
+                    FILE *ficheiroEscrita = fopen("highscore.txt", "w");
+                    if (ficheiroEscrita != NULL) {
+                        fprintf(ficheiroEscrita, "%d", highScore);
+                        fclose(ficheiroEscrita);
+                    }
+                }
+            tela = TELA_DERROTA;
+        }
+        //aumentar a pontuação para teste (tirar futuramente)
+        if (IsKeyPressed(KEY_P)) {
+                pontuacao += 10;
+        }
+        //teste de vitoria (tirar futuramente)
         if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
-        if (IsKeyPressed(KEY_G)) tela = TELA_DERROTA;
+
     }
 
     Rectangle origem = { quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO };
@@ -96,7 +130,10 @@ while (!WindowShouldClose()) {
             DrawTexture(praia, AREA_X, 0, WHITE);
             DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
             DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
-            DrawText("M PARA MENU", 110, 678, 24, WHITE);
+            DrawText(TextFormat("VIDAS: %d", vida), 110, 678, 24, WHITE);
+            DrawText(TextFormat("SCORE: %04d", pontuacao), 80, 70, 30, WHITE);
+            DrawText(TextFormat("HI-SCORE: %04d", highScore), 80, 100, 30, GOLD);
+            //apertar M ainda manda para o menu.
         }
 
         else if (tela == TELA_DERROTA) {
