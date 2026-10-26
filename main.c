@@ -1,6 +1,6 @@
 #include "raylib.h"
 #include <math.h> //fminf(): devolve o menor numero entre dois numeros decimais
-#include <stdio.h>
+#include <stdio.h> //para poder abrir o arquivo txt para salvar highscore
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
@@ -44,8 +44,7 @@ int main (void){
     int quadro = 0;
     float tempo = 0;
     float duracao = 1.0f / 12.0f;
-    //erro: quando volta para o menu, não volta as vidas, corrigir depois.
-    int vida = 3;
+    int vida;
 
     int pontuacao = 0;
     int highScore = 0;
@@ -68,7 +67,8 @@ while (!WindowShouldClose()) {
 
     if (tela == TELA_MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
-            x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; //macaco começa no meio da tela
+            x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; 
+            vida = 3;
             pontuacao = 0;
             tela = TELA_JOGO;
         }
@@ -84,25 +84,37 @@ while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_H)) {
             vida--;
         }
+        
         if (vida <= 0) {
-                // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
-                if (pontuacao > highScore) {
-                    highScore = pontuacao;
-                    FILE *ficheiroEscrita = fopen("highscore.txt", "w");
-                    if (ficheiroEscrita != NULL) {
-                        fprintf(ficheiroEscrita, "%d", highScore);
-                        fclose(ficheiroEscrita);
-                    }
+            // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
+            if (pontuacao > highScore) {
+                highScore = pontuacao;
+                FILE *ficheiroEscrita = fopen("highscore.txt", "w");
+                if (ficheiroEscrita != NULL) {
+                    fprintf(ficheiroEscrita, "%d", highScore);
+                    fclose(ficheiroEscrita);
                 }
+            }
             tela = TELA_DERROTA;
         }
         //aumentar a pontuação para teste (tirar futuramente)
         if (IsKeyPressed(KEY_P)) {
-                pontuacao += 10;
+            pontuacao += 10;
         }
         //teste de vitoria (tirar futuramente)
         if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
+    }
 
+    else if (tela == TELA_DERROTA) {
+        if (IsKeyPressed(KEY_ENTER)) {
+            tela = TELA_MENU;
+        }
+    }
+    
+    else if (tela == TELA_VITORIA) {
+        if (IsKeyPressed(KEY_ENTER)) {
+            tela = TELA_MENU;
+        }
     }
 
     Rectangle origem = { quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO };
@@ -162,7 +174,8 @@ while (!WindowShouldClose()) {
                     (Rectangle){ 0, 0, LARGURA, -ALTURA },
                     destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
     EndDrawing();
-}
+    }
+    
     //limpa a memoria
     UnloadTexture(sheet);
     UnloadTexture(logo);
