@@ -38,13 +38,6 @@ int main (void){
     float duracao = 1.0f / 12.0f;
 
 while (!WindowShouldClose()) {
-    //movimentação do macaco
-    if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-        if (x > 0) x -= velocidade;
-    }
-    if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-        if (x < 800 - TAM_QUADRO) x += velocidade;
-    }
 
     //animação do macaco
     tempo += GetFrameTime();
