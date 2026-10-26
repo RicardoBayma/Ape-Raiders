@@ -9,7 +9,9 @@
 //telas, fiz em struct
 typedef enum {
     TELA_MENU,
-    TELA_JOGO
+    TELA_JOGO,
+    TELA_DERROTA,
+    TELA_VITORIA
 } Tela;
 
 int main (void){
@@ -63,6 +65,9 @@ while (!WindowShouldClose()) {
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < 800 - TAM_QUADRO) x+= velocidade;}
 
         if (IsKeyPressed(KEY_M)) tela = TELA_MENU;
+        
+        if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
+        if (IsKeyPressed(KEY_G)) tela = TELA_DERROTA;
     }
 
     Rectangle origem = { quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO };
@@ -88,6 +93,19 @@ while (!WindowShouldClose()) {
             DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
             DrawText("M PARA MENU", 10, 10, 20, GRAY);
         }
+
+        else if (tela == TELA_DERROTA) {
+            const char *msg = "VOCÊ PERDEU";
+            DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, RED);
+            DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
+        }
+
+        else if (tela == TELA_VITORIA) {
+            const char *msg = "VOCE VENCEU";
+            DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, GREEN);
+            DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
+        }
+
     EndTextureMode();
         //escala da textura interna, é para ficar centralizado
     float escala = fminf((float)GetScreenWidth() / LARGURA,
