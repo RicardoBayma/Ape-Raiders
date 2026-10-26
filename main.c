@@ -8,7 +8,7 @@
 #define AREA_X 400
 #define AREA_LARGURA 588
 
-//telas, fiz em struct
+//telas, fiz em enum
 typedef enum {
     TELA_MENU,
     TELA_JOGO,
@@ -61,6 +61,7 @@ while (!WindowShouldClose()) {
     }
 
     else if (tela == TELA_JOGO) {
+        //movimentação do macaco
         if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {if (x > AREA_X) x -= velocidade;}
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < AREA_X + AREA_LARGURA - TAM_QUADRO) x+= velocidade;}
 
@@ -90,6 +91,7 @@ while (!WindowShouldClose()) {
         }
 
         else if (tela == TELA_JOGO) {
+            //a ordem importa
             DrawTexture(painelEsq, 0, 0, WHITE);
             DrawTexture(praia, AREA_X, 0, WHITE);
             DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
