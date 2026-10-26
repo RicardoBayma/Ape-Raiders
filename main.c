@@ -8,13 +8,15 @@
 #define ALTURA 768 //altura do 'mundo'
 #define AREA_X 400
 #define AREA_LARGURA 588
+#define VIDAS_MAX 3
 
 //telas, fiz em enum
 typedef enum {
     TELA_MENU,
     TELA_JOGO,
     TELA_DERROTA,
-    TELA_VITORIA
+    TELA_VITORIA,
+    TELA_PAUSE
 } Tela;
 
 int main (void){
@@ -25,7 +27,7 @@ int main (void){
     SetWindowMinSize(688, 384); //tamanho minimo
 
     RenderTexture2D alvo = LoadRenderTexture(LARGURA,ALTURA);
-    SetTextureFilter(alvo.texture, TEXTURE_FILTER_POINT);
+    SetTextureFilter(alvo.texture, TEXTURE_FILTER_BILINEAR);
 
     Texture2D sheet = LoadTexture("macaco_sheet.png");
     Texture2D logo = LoadTexture("logo.png");
@@ -36,6 +38,9 @@ int main (void){
     Texture2D praia = LoadTexture("praia.png");
     Texture2D painelDir = LoadTexture("painel_direito.png");
 
+    Texture2D coracao = LoadTexture("coracao.png");
+    SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
+
     Tela tela = TELA_MENU;
 
     float x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2;
@@ -44,7 +49,7 @@ int main (void){
     int quadro = 0;
     float tempo = 0;
     float duracao = 1.0f / 12.0f;
-    int vida;
+    int vida = VIDAS_MAX;
 
     int pontuacao = 0;
     int highScore = 0;
@@ -85,6 +90,8 @@ while (!WindowShouldClose()) {
             vida--;
         }
         
+        if (IsKeyPressed(KEY_P)) tela = TELA_PAUSE;
+
         if (vida <= 0) {
             // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
             if (pontuacao > highScore) {
@@ -98,7 +105,7 @@ while (!WindowShouldClose()) {
             tela = TELA_DERROTA;
         }
         //aumentar a pontuação para teste (tirar futuramente)
-        if (IsKeyPressed(KEY_P)) {
+        if (IsKeyPressed(KEY_K)) {
             pontuacao += 10;
         }
         //teste de vitoria (tirar futuramente)
@@ -114,6 +121,12 @@ while (!WindowShouldClose()) {
     else if (tela == TELA_VITORIA) {
         if (IsKeyPressed(KEY_ENTER)) {
             tela = TELA_MENU;
+        }
+    }
+
+    else if (tela == TELA_PAUSE) {
+        if (IsKeyPressed(KEY_P)) {
+            tela = TELA_JOGO;
         }
     }
 
@@ -136,20 +149,36 @@ while (!WindowShouldClose()) {
             DrawText("ESC PARA SAIR", 10, ALTURA - 30, 20, GRAY);
         }
 
-        else if (tela == TELA_JOGO) {
+        else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
             //a ordem importa
             DrawTexture(painelEsq, 0, 0, WHITE);
             DrawTexture(praia, AREA_X, 0, WHITE);
             DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
             DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
-            DrawText(TextFormat("VIDAS: %d", vida), 110, 678, 24, WHITE);
+            
+            int espaco = 12;
+            int larguratotal = VIDAS_MAX * coracao.width + (VIDAS_MAX - 1) * espaco;
+            int inicioX = (385 - larguratotal) / 2;
+            int coracaoY = 650 + (85 - coracao.height) / 2;
+
+            for (int i = 0; i < VIDAS_MAX; i++) {
+                Color cor = (i < vida) ? WHITE : Fade(WHITE, 0.2f);
+                DrawTexture(coracao, inicioX + i * (coracao.width + espaco), coracaoY, cor);
+            }
+
             DrawText(TextFormat("SCORE: %04d", pontuacao), 80, 70, 30, WHITE);
             DrawText(TextFormat("HI-SCORE: %04d", highScore), 80, 100, 30, GOLD);
             //apertar M ainda manda para o menu.
+
+            if (tela == TELA_PAUSE) {
+                DrawRectangle(0,0, LARGURA, ALTURA, Fade(BLACK, 0.6f));
+                const char *msg = "PAUSE";
+                DrawText("APERTE P PARA VOLTAR", (LARGURA - MeasureText("APERTE P PARA VOLTAR", 20)) / 2, 240, 20, GRAY);
+            }
         }
 
         else if (tela == TELA_DERROTA) {
-            const char *msg = "VOCÊ PERDEU";
+            const char *msg = "VOCE PERDEU";
             DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, RED);
             DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
         }
@@ -182,6 +211,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(painelEsq);
     UnloadTexture(praia);
     UnloadTexture(painelDir);
+    UnloadTexture(coracao);
     UnloadRenderTexture(alvo);
     CloseWindow();
     return 0;
