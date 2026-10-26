@@ -3,8 +3,10 @@
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
-#define LARGURA 800 //largura do 'mundo'
-#define ALTURA 600 //altura do 'mundo'
+#define LARGURA 1376 //largura do 'mundo'
+#define ALTURA 768 //altura do 'mundo'
+#define AREA_X 400
+#define AREA_LARGURA 588
 
 //telas, fiz em struct
 typedef enum {
@@ -19,7 +21,7 @@ int main (void){
     SetConfigFlags(FLAG_WINDOW_RESIZABLE); //permite que a janela diminua e aumente
     InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
     SetTargetFPS(60);
-    SetWindowMinSize(400, 300); //tamanho minimo
+    SetWindowMinSize(688, 384); //tamanho minimo
 
     RenderTexture2D alvo = LoadRenderTexture(LARGURA,ALTURA);
     SetTextureFilter(alvo.texture, TEXTURE_FILTER_POINT);
@@ -29,9 +31,14 @@ int main (void){
     GenTextureMipmaps(&logo);
     SetTextureFilter(logo, TEXTURE_FILTER_TRILINEAR);
 
+    Texture2D painelEsq = LoadTexture("painel_esquerdo.png");
+    Texture2D praia = LoadTexture("praia.png");
+    Texture2D painelDir = LoadTexture("painel_direito.png");
+
     Tela tela = TELA_MENU;
 
-    float x = 400, y = 480;
+    float x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2;
+    float y = ALTURA - TAM_QUADRO - 10;
     float velocidade = 5;
     int quadro = 0;
     float tempo = 0;
@@ -48,14 +55,14 @@ while (!WindowShouldClose()) {
 
     if (tela == TELA_MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
-            x = 400; //macaco começa no meio da tela
+            x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; //macaco começa no meio da tela
             tela = TELA_JOGO;
         }
     }
 
     else if (tela == TELA_JOGO) {
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {if (x > 0) x -= velocidade;}
-        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < 800 - TAM_QUADRO) x+= velocidade;}
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {if (x > AREA_X) x -= velocidade;}
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < AREA_X + AREA_LARGURA - TAM_QUADRO) x+= velocidade;}
 
         if (IsKeyPressed(KEY_M)) tela = TELA_MENU;
         
@@ -83,8 +90,11 @@ while (!WindowShouldClose()) {
         }
 
         else if (tela == TELA_JOGO) {
+            DrawTexture(painelEsq, 0, 0, WHITE);
+            DrawTexture(praia, AREA_X, 0, WHITE);
+            DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
             DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
-            DrawText("M PARA MENU", 10, 10, 20, GRAY);
+            DrawText("M PARA MENU", 110, 678, 24, WHITE);
         }
 
         else if (tela == TELA_DERROTA) {
@@ -117,6 +127,9 @@ while (!WindowShouldClose()) {
     //limpa a memoria
     UnloadTexture(sheet);
     UnloadTexture(logo);
+    UnloadTexture(painelEsq);
+    UnloadTexture(praia);
+    UnloadTexture(painelDir);
     UnloadRenderTexture(alvo);
     CloseWindow();
     return 0;
