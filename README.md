@@ -5,7 +5,7 @@
     <td align="center">
       <a href="https://github.com/RicardoBayma">
         <img src="https://github.com/RicardoBayma.png" width="150px;" alt="Foto de Ricardo"/><br>
-        <sub><b>Ricardo Bayman</b></sub>
+        <sub><b>Ricardo Bayma</b></sub>
       </a>
     </td>
     <td align="center">
