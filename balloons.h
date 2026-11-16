@@ -1,8 +1,9 @@
 #ifndef BALLOONS_H
 #define BALLOONS_H
 #include <stdbool.h>
+#include "raylib.h"
 
-#define MAX_BALLOONS 25 //definicao inicial de qtd max, editavel baseado nas necessidades
+#define MAX_BALLOONS 25 //maximo de baloes vivos ao mesmo tempo, esta so de teste, temos que mudar depois
 
 typedef enum{
     BALLOON_RED,
@@ -11,20 +12,41 @@ typedef enum{
     BALLOON_YELLOW,
     BALLOON_PINK,
     BOSS
-} TiposBalao; //definicao dos tipos de inimigos, balao e boss
+} TiposBalao; //tipos de balao
 
-typedef struct{
-    float x, y; //coordenadas do balao
-    float speed, offset; //velocidade de movimentacao vertical (speed) e horizontal (offset) que faz eles mexerem alternadamente
-    int hp, maxHp; //vida atual do balao(hp) e quantos hits para chegar ao total da vida dele(maxHp)
-    bool ativo;//se o balao existe ou nao
+//informacoes dos baloes, vida, hitbox, velocidade, tempo etc
+typedef struct Balao{
+    float x, y;        
+    float w, h;
+    float baseX;
+    float amp;
+    float speed, offset;
+    float tempoVida;
+    int hp, maxHp;
+    bool ativo;
 
-    TiposBalao tipo;//identificar qual dos tipos de balao o atual é
+    TiposBalao tipo;
+
+    struct Balao *prox;
 } Balao;
 
-void IniciarBalao(void);
+//area do jogo
+void IniciarBalao(Rectangle areaJogo, float linhaChegada);
+
+//cria um balao na posicao x,y
 void SpawnBalao(float x, float y, TiposBalao tipo);
-void AttBalao(float deltaTempo);
-void DrawBalao(void);
+
+int AttBalao(float deltaTempo, int pontuacao);
+
+void DrawBalao(void); //desenha todos os baloes
+
+void ReiniciarBaloes(void); //zera o timer e listas
+void FinalizarBalao(void);  //limpa textura
+
+//funcoes de para o tiro(alterar pois provavelmente vamos ter que mudar)
+Balao *BalaoEmRetangulo(Rectangle r);
+int DanoBalao(Balao *b, int dano);    //tira vida
+Balao *BalaoMaisBaixo(void);          //balao mais proximo do jogador
+int ContarBaloes(void);               //quantidade de baloes vivos
 
 #endif
