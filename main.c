@@ -52,6 +52,9 @@ int main (void){
     float duracao = 1.0f / 12.0f;
     int vida = VIDAS_MAX;
 
+    //limites do spawn dos baloes pra eles n sairem da tela do jogo
+    IniciarBalao((Rectangle){ AREA_X, 0, AREA_LARGURA, ALTURA }, y);
+    
     int pontuacao = 0;
     int highScore = 0;
 
