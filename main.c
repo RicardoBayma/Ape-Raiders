@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <math.h> //fminf(): devolve o menor numero entre dois numeros decimais
 #include <stdio.h> //para poder abrir o arquivo txt para salvar highscore
+#include "balloons.h"
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
