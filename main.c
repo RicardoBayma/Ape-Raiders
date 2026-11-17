@@ -97,6 +97,10 @@ while (!WindowShouldClose()) {
         
         if (IsKeyPressed(KEY_P)) tela = TELA_PAUSE;
 
+        //precionar P para pausar o jogo e vice-versa
+        //cada balao que chega no macaco tira 1 vida
+        vida -= AttBalao(GetFrameTime(), pontuacao);
+        
         if (vida <= 0) {
             // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
             if (pontuacao > highScore) {
@@ -112,6 +116,11 @@ while (!WindowShouldClose()) {
         //aumentar a pontuação para teste (tirar futuramente)
         if (IsKeyPressed(KEY_K)) {
             pontuacao += 10;
+        }
+        //teste (tirar futuramente): J tira 1 de vida do balao mais proximo do macaco
+        if (IsKeyPressed(KEY_J)) {
+            Balao *alvoBalao = BalaoMaisBaixo();
+            pontuacao += DanoBalao(alvoBalao, 1);
         }
         //teste de vitoria (tirar futuramente)
         if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
