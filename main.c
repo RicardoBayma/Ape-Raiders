@@ -21,23 +21,17 @@ typedef enum {
 } Tela;
 
 int main (void){
-    //configurações da janela
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE); //permite que a janela diminua e aumente
     InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
     SetTargetFPS(60);
-    SetWindowMinSize(688, 384); //tamanho minimo
-
-    RenderTexture2D alvo = LoadRenderTexture(LARGURA,ALTURA);
-    SetTextureFilter(alvo.texture, TEXTURE_FILTER_BILINEAR);
+    SetWindowMinSize(1376, 768);
 
     Texture2D sheet = LoadTexture("macaco_sheet.png");
     Texture2D logo = LoadTexture("logo.png");
     GenTextureMipmaps(&logo);
     SetTextureFilter(logo, TEXTURE_FILTER_TRILINEAR);
 
-    Texture2D painelEsq = LoadTexture("painel_esquerdo.png");
-    Texture2D praia = LoadTexture("praia.png");
-    Texture2D painelDir = LoadTexture("painel_direito.png");
+    Texture2D fundo = LoadTexture("fundo.png");
+    Texture2D derrota = LoadTexture("derrota.png");
 
     Texture2D coracao = LoadTexture("coracao.png");
     SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
@@ -77,7 +71,7 @@ while (!WindowShouldClose()) {
     if (tela == TELA_MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
             x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; 
-            vida = 3;
+            vida = VIDAS_MAX;
             pontuacao = 0;
             ReiniciarBaloes(); //limpa os baloes da partida passada
             tela = TELA_JOGO;
@@ -146,7 +140,7 @@ while (!WindowShouldClose()) {
 
     Rectangle origem = { quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO };
 
-    BeginTextureMode(alvo);
+    BeginDrawing();
         ClearBackground(BLACK);
 
         if (tela == TELA_MENU) {
@@ -164,13 +158,15 @@ while (!WindowShouldClose()) {
         }
 
         else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
-            //a ordem importa
-            DrawTexture(praia, AREA_X, 0, WHITE);
+            DrawTexture(fundo, 0, 0, WHITE);
             DrawBalao();
-            DrawTexture(painelEsq, 0, 0, WHITE);
-            DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
-            DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
-            
+
+            Rectangle recEsq = {0, 0, AREA_X, ALTURA};
+            Rectangle recDir = {AREA_X + AREA_LARGURA, 0, LARGURA - (AREA_X + AREA_LARGURA), ALTURA};
+            DrawTextureRec(fundo, recEsq, (Vector2){recEsq.x, recEsq.y}, WHITE);
+            DrawTextureRec(fundo, recDir, (Vector2){recDir.x, recDir.y}, WHITE);
+            DrawTextureRec(sheet, origem, (Vector2){ x, y }, WHITE);
+
             int espaco = 12;
             int larguratotal = VIDAS_MAX * coracao.width + (VIDAS_MAX - 1) * espaco;
             int inicioX = (385 - larguratotal) / 2;
@@ -187,14 +183,12 @@ while (!WindowShouldClose()) {
 
             if (tela == TELA_PAUSE) {
                 DrawRectangle(0,0, LARGURA, ALTURA, Fade(BLACK, 0.6f));
-                const char *msg = "PAUSE";
                 DrawText("APERTE P PARA VOLTAR", (LARGURA - MeasureText("APERTE P PARA VOLTAR", 20)) / 2, 240, 20, GRAY);
             }
         }
 
         else if (tela == TELA_DERROTA) {
-            const char *msg = "VOCE PERDEU";
-            DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, RED);
+            DrawTexture(derrota, 0, 0, WHITE);
             DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
         }
 
@@ -203,32 +197,16 @@ while (!WindowShouldClose()) {
             DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, GREEN);
             DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
         }
-
-    EndTextureMode();
-        //escala da textura interna, é para ficar centralizado
-    float escala = fminf((float)GetScreenWidth() / LARGURA,
-                        (float)GetScreenHeight() / ALTURA);
-    float w = LARGURA * escala;
-    float h = ALTURA * escala;
-    Rectangle destino = { (GetScreenWidth() - w) / 2, (GetScreenHeight() - h) / 2, w, h };
-
-    BeginDrawing();
-        ClearBackground(BLACK);
-        DrawTexturePro(alvo.texture,
-                    (Rectangle){ 0, 0, LARGURA, -ALTURA },
-                    destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
     EndDrawing();
     }
     
     //limpa a memoria
     UnloadTexture(sheet);
     UnloadTexture(logo);
-    UnloadTexture(painelEsq);
-    UnloadTexture(praia);
-    UnloadTexture(painelDir);
+    UnloadTexture(fundo);
+    UnloadTexture(derrota);
     UnloadTexture(coracao);
     FinalizarBalao();
-    UnloadRenderTexture(alvo);
     CloseWindow();
     return 0;
 }
