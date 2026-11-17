@@ -227,6 +227,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(praia);
     UnloadTexture(painelDir);
     UnloadTexture(coracao);
+    FinalizarBalao();
     UnloadRenderTexture(alvo);
     CloseWindow();
     return 0;
