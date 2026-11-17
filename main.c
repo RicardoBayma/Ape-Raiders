@@ -10,6 +10,15 @@
 #define AREA_X 400
 #define AREA_LARGURA 588
 #define VIDAS_MAX 3
+#define DARDOS_MAX 20 //numero maximo de dardos na tela para não sobrecarregar
+#define DARDOS_VEL 15.0f //ajuste da velocidade do tiro
+#define DARDOS_RECARGA 0.5f //intervalo do tiro automatico
+
+#define EXPLOSOES_MAX 20 //maximo de explosoes na tela ao mesmo tempo
+#define EXPLOSAO_QUADROS 10 //quantidade de quadros da explosao na sheet
+#define EXPLOSAO_COLUNAS 3 //quadros por linha na sheet
+#define EXPLOSAO_TAM 200 //largura e altura de cada quadro da sheet (pixels)
+#define EXPLOSAO_DURACAO 0.08f //segundos que cada quadro fica na tela
 
 //telas, fiz em enum
 typedef enum {
@@ -19,6 +28,19 @@ typedef enum {
     TELA_VITORIA,
     TELA_PAUSE
 } Tela;
+
+typedef struct {
+    float x, y;
+    bool atv;
+} Dardo;
+
+typedef struct {
+    float x, y; //centro da explosao
+    float tam; //tamanho desenhado na tela
+    int quadro; //quadro atual da animacao
+    float tempo; //tempo no quadro atual
+    bool atv;
+} Explosao;
 
 int main (void){
     InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
@@ -35,6 +57,14 @@ int main (void){
 
     Texture2D coracao = LoadTexture("coracao.png");
     SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
+
+    Texture2D textDardo = LoadTexture("dardo.png");
+    Dardo dardos[DARDOS_MAX] = {0};
+    float recarga = 0;//tempo para poder atirar novamente
+
+    Texture2D textExplosao = LoadTexture("explode.png");
+    SetTextureFilter(textExplosao, TEXTURE_FILTER_BILINEAR); //deixa a explosao mais sutil no fim
+    Explosao explosoes[EXPLOSOES_MAX] = {0};
 
     Tela tela = TELA_MENU;
 
@@ -74,6 +104,9 @@ while (!WindowShouldClose()) {
             vida = VIDAS_MAX;
             pontuacao = 0;
             ReiniciarBaloes(); //limpa os baloes da partida passada
+            for (int i = 0; i < DARDOS_MAX; i++) dardos[i].atv = false; //limpa os dardos
+            for (int e = 0; e < EXPLOSOES_MAX; e++) explosoes[e].atv = false; //limpa as explosoes
+            recarga = 0;
             tela = TELA_JOGO;
         }
     }
@@ -84,6 +117,65 @@ while (!WindowShouldClose()) {
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < AREA_X + AREA_LARGURA - TAM_QUADRO) x+= velocidade;}
 
         if (IsKeyPressed(KEY_M)) tela = TELA_MENU;
+        //tiro automatico
+        recarga-=GetFrameTime();
+        if(recarga <=0){
+            for(int i=0;i<DARDOS_MAX;i++){
+                if(!dardos[i].atv){
+                    dardos[i].x = x + (TAM_QUADRO - textDardo.width) / 2.0f;
+                    dardos[i].y = y - textDardo.height / 2.0f;
+                    dardos[i].atv = true;
+                    recarga = DARDOS_RECARGA;
+                    break;
+                }
+            }
+        }
+
+        //move os dardos, checa se acertou algum balao
+        for (int i = 0; i < DARDOS_MAX; i++) {
+            if (!dardos[i].atv) continue;
+            dardos[i].y -= DARDOS_VEL;
+
+            if (dardos[i].y + textDardo.height < 0) { //dardo saiu por cima da tela
+                dardos[i].atv = false;
+                continue;
+            }
+
+            //define a hitbox do dardo para ser somente a ponta do png
+            Rectangle hitDardo = { dardos[i].x + textDardo.width / 2.0f - 4, dardos[i].y, 8, textDardo.height / 2.0f };
+            Balao *atingido = BalaoEmRetangulo(hitDardo);
+            if (atingido != NULL) {
+                int pontos = DanoBalao(atingido, 1);
+                pontuacao += pontos;
+                dardos[i].atv = false;
+
+                //so ganha pontos quando o balao estoura, cria a explosao no centro dele
+                if (pontos > 0) {
+                    for (int e = 0; e < EXPLOSOES_MAX; e++) {
+                        if (!explosoes[e].atv) {
+                            explosoes[e].x = atingido->x + atingido->w / 2;
+                            explosoes[e].y = atingido->y + atingido->h / 2;
+                            explosoes[e].tam = atingido->w * 1.5f; //ajuste da escala em relacao ao balao
+                            explosoes[e].quadro = 0;
+                            explosoes[e].tempo = 0;
+                            explosoes[e].atv = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        //percorre a spreadsheet da explosao
+        for (int e = 0; e < EXPLOSOES_MAX; e++) {
+            if (!explosoes[e].atv) continue;
+            explosoes[e].tempo += GetFrameTime();
+            if (explosoes[e].tempo >= EXPLOSAO_DURACAO) {
+                explosoes[e].tempo -= EXPLOSAO_DURACAO;
+                explosoes[e].quadro++;
+                if (explosoes[e].quadro >= EXPLOSAO_QUADROS) explosoes[e].atv = false;
+            }
+        }
 
         if (IsKeyPressed(KEY_H)) {
             vida--;
@@ -91,7 +183,7 @@ while (!WindowShouldClose()) {
         
         if (IsKeyPressed(KEY_P)) tela = TELA_PAUSE;
 
-        //precionar P para pausar o jogo e vice-versa
+        //pressionar P para pausar o jogo e vice-versa
         //cada balao que chega no macaco tira 1 vida
         vida -= AttBalao(GetFrameTime(), pontuacao);
         
@@ -111,11 +203,7 @@ while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_K)) {
             pontuacao += 10;
         }
-        //teste (tirar futuramente): J tira 1 de vida do balao mais proximo do macaco
-        if (IsKeyPressed(KEY_J)) {
-            Balao *alvoBalao = BalaoMaisBaixo();
-            pontuacao += DanoBalao(alvoBalao, 1);
-        }
+
         //teste de vitoria (tirar futuramente)
         if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
     }
@@ -161,6 +249,20 @@ while (!WindowShouldClose()) {
             DrawTexture(fundo, 0, 0, WHITE);
             DrawBalao();
 
+            for (int i = 0; i < DARDOS_MAX; i++) {
+                if (dardos[i].atv) DrawTexture(textDardo, (int)dardos[i].x, (int)dardos[i].y, WHITE);
+            }
+
+            //desenho das explosoes
+            for (int e = 0; e < EXPLOSOES_MAX; e++) {
+                if (!explosoes[e].atv) continue;
+                int q = explosoes[e].quadro;
+                Rectangle recorte = { (q % EXPLOSAO_COLUNAS) * EXPLOSAO_TAM, (q / EXPLOSAO_COLUNAS) * EXPLOSAO_TAM, EXPLOSAO_TAM, EXPLOSAO_TAM };
+                float t = explosoes[e].tam;
+                Rectangle destino = { explosoes[e].x - t / 2, explosoes[e].y - t / 2, t, t };
+                DrawTexturePro(textExplosao, recorte, destino, (Vector2){0, 0}, 0.0f, WHITE);
+            }
+
             Rectangle recEsq = {0, 0, AREA_X, ALTURA};
             Rectangle recDir = {AREA_X + AREA_LARGURA, 0, LARGURA - (AREA_X + AREA_LARGURA), ALTURA};
             DrawTextureRec(fundo, recEsq, (Vector2){recEsq.x, recEsq.y}, WHITE);
@@ -179,7 +281,7 @@ while (!WindowShouldClose()) {
 
             DrawText(TextFormat("SCORE: %04d", pontuacao), 80, 70, 30, WHITE);
             DrawText(TextFormat("HI-SCORE: %04d", highScore), 80, 100, 30, GOLD);
-            //apertar M ainda manda para o menu.
+            //apertar M manda para o menu.
 
             if (tela == TELA_PAUSE) {
                 DrawRectangle(0,0, LARGURA, ALTURA, Fade(BLACK, 0.6f));
@@ -206,6 +308,8 @@ while (!WindowShouldClose()) {
     UnloadTexture(fundo);
     UnloadTexture(derrota);
     UnloadTexture(coracao);
+    UnloadTexture(textDardo);
+    UnloadTexture(textExplosao);
     FinalizarBalao();
     CloseWindow();
     return 0;
