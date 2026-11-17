@@ -165,8 +165,9 @@ while (!WindowShouldClose()) {
 
         else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
             //a ordem importa
-            DrawTexture(painelEsq, 0, 0, WHITE);
             DrawTexture(praia, AREA_X, 0, WHITE);
+            DrawBalao();
+            DrawTexture(painelEsq, 0, 0, WHITE);
             DrawTexture(painelDir, AREA_X + AREA_LARGURA, 0, WHITE);
             DrawTextureRec(sheet, origem, (Vector2){x,y}, WHITE);
             
