@@ -79,6 +79,7 @@ while (!WindowShouldClose()) {
             x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; 
             vida = 3;
             pontuacao = 0;
+            ReiniciarBaloes(); //limpa os baloes da partida passada
             tela = TELA_JOGO;
         }
     }
