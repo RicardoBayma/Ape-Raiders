@@ -20,6 +20,11 @@
 #define EXPLOSAO_TAM 200 //largura e altura de cada quadro da sheet (pixels)
 #define EXPLOSAO_DURACAO 0.08f //segundos que cada quadro fica na tela
 
+#define ROSTO_X 88
+#define ROSTO_Y 280
+#define ROSTO_W 204
+#define ROSTO_H 208
+
 //telas, fiz em enum
 typedef enum {
     TELA_MENU,
@@ -51,6 +56,7 @@ int main (void){
     Texture2D inicial = LoadTexture("inicial.png");
     Texture2D fundo = LoadTexture("fundo.png");
     Texture2D derrota = LoadTexture("derrota.png");
+    Texture2D rostos = LoadTexture("macaco_rostos.png");
 
     Texture2D coracao = LoadTexture("coracao.png");
     SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
@@ -262,6 +268,14 @@ while (!WindowShouldClose()) {
             DrawTextureRec(fundo, recDir, (Vector2){recDir.x, recDir.y}, WHITE);
             DrawTextureRec(sheet, origem, (Vector2){ x, y }, WHITE);
 
+            // quantas vidas já foram perdidas: 0 = normal, 1 = machucado, 2 = desmaiado
+            int perdidas = VIDAS_MAX - vida;
+            if (perdidas < 0) perdidas = 0;
+            if (perdidas > 2) perdidas = 2;   // só existem 3 rostos
+
+            Rectangle recRosto = { perdidas * ROSTO_W, 0, ROSTO_W, ROSTO_H };   // recorta o rosto certo
+            DrawTextureRec(rostos, recRosto, (Vector2){ ROSTO_X, ROSTO_Y }, WHITE);
+
             int espaco = 12;
             int larguratotal = VIDAS_MAX * coracao.width + (VIDAS_MAX - 1) * espaco;
             int inicioX = (385 - larguratotal) / 2;
@@ -303,6 +317,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(coracao);
     UnloadTexture(textDardo);
     UnloadTexture(textExplosao);
+    UnloadTexture(rostos);
     FinalizarBalao();
     CloseWindow();
     return 0;
