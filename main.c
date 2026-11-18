@@ -48,10 +48,7 @@ int main (void){
     SetWindowMinSize(1376, 768);
 
     Texture2D sheet = LoadTexture("macaco_sheet.png");
-    Texture2D logo = LoadTexture("logo.png");
-    GenTextureMipmaps(&logo);
-    SetTextureFilter(logo, TEXTURE_FILTER_TRILINEAR);
-
+    Texture2D inicial = LoadTexture("inicial.png");
     Texture2D fundo = LoadTexture("fundo.png");
     Texture2D derrota = LoadTexture("derrota.png");
 
@@ -232,17 +229,13 @@ while (!WindowShouldClose()) {
         ClearBackground(BLACK);
 
         if (tela == TELA_MENU) {
-            //escala do logo, para deixar centralizado.
-            float escalaLogo = fminf(560.0f / logo.width, 240.0f / logo.height);
-            float larguraLogo = logo.width * escalaLogo;
-
-            DrawTextureEx(logo, (Vector2){ (LARGURA - larguraLogo)/2,80}, 0.0f, escalaLogo, WHITE);
+            DrawTexture(inicial, 0, 0, WHITE);
 
             if ((int)(GetTime() * 2) % 2 == 0) {
                 const char *msg = "PRESSIONE ENTER PARA JOGAR";
-                DrawText(msg, (LARGURA - MeasureText(msg, 24)) / 2, 440, 24, WHITE);
+                DrawText(msg, (LARGURA - MeasureText(msg, 24)) / 2, 700, 24, WHITE);
             }
-            DrawText("ESC PARA SAIR", 10, ALTURA - 30, 20, GRAY);
+            DrawText("ESC PARA SAIR", 10, ALTURA - 30, 20, WHITE);
         }
 
         else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
@@ -304,7 +297,7 @@ while (!WindowShouldClose()) {
     
     //limpa a memoria
     UnloadTexture(sheet);
-    UnloadTexture(logo);
+    UnloadTexture(inicial);
     UnloadTexture(fundo);
     UnloadTexture(derrota);
     UnloadTexture(coracao);
