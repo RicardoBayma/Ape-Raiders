@@ -16,12 +16,12 @@ typedef struct {
 } InfoSprite;
 
 static const InfoSprite SPRITES[NUM_TEXTURAS] = {
-    {"Baloes/vermelho.png", BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, RED},
-    {"Baloes/azul.png",     BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, BLUE},
-    {"Baloes/verde.png",    BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, GREEN},
-    {"Baloes/amarelo.png",  BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, YELLOW},
-    {"Baloes/rosa.png",     BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, PINK},
-    {"Baloes/boss.png",     BOSS_TAM,  0.143f, 0.098f, 0.714f, 0.800f, PURPLE}
+    {"assets/vermelho.png", BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, RED},
+    {"assets/azul.png",     BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, BLUE},
+    {"assets/verde.png",    BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, GREEN},
+    {"assets/amarelo.png",  BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, YELLOW},
+    {"assets/rosa.png",     BALAO_TAM, 0.353f, 0.263f, 0.335f, 0.435f, PINK},
+    {"assets/boss.png",     BOSS_TAM,  0.143f, 0.098f, 0.714f, 0.800f, PURPLE}
 };
 
 //velocidade base (px/s) por hp atual (1..5): quanto mais "camadas", mais rapido

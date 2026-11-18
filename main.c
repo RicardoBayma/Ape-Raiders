@@ -124,20 +124,17 @@ int main (void){
     SetTargetFPS(60);
     SetWindowMinSize(1376, 768);
 
-    Texture2D sheet = LoadTexture("macaco_sheet.png");
-    Texture2D inicial = LoadTexture("inicial.png");
-    Texture2D fundo = LoadTexture("fundo.png");
-    Texture2D derrota = LoadTexture("derrota.png");
-    Texture2D rostos = LoadTexture("macaco_rostos.png"); //3 rostos de 204x208 lado a lado
-
-    Texture2D coracao = LoadTexture("coracao.png");
+    Texture2D sheet = LoadTexture("assets/macaco_sheet.png");
+    Texture2D inicial = LoadTexture("assets/inicial.png");
+    Texture2D fundo = LoadTexture("assets/fundo.png");
+    Texture2D derrota = LoadTexture("assets/derrota.png");
+    Texture2D rostos = LoadTexture("assets/macaco_rostos.png"); //3 rostos de 204x208 lado a lado
+    Texture2D coracao = LoadTexture("assets/coracao.png");
     SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
-
-    Texture2D textDardo = LoadTexture("dardo.png");
+    Texture2D textDardo = LoadTexture("assets/dardo.png");
     Dardo dardos[DARDOS_MAX] = {0};
     float recarga = 0;//tempo para poder atirar novamente
-
-    Texture2D textExplosao = LoadTexture("explode.png");
+    Texture2D textExplosao = LoadTexture("assets/explode.png");
     SetTextureFilter(textExplosao, TEXTURE_FILTER_BILINEAR); //deixa a explosao mais sutil no fim
     Explosao explosoes[EXPLOSOES_MAX] = {0};
 
