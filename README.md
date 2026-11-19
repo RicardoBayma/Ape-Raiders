@@ -28,7 +28,7 @@ A cada **10 balões estourados**, o jogo sorteia um upgrade. Eles são **acumula
  
 | Upgrade | Níveis | Efeito |
 |---|---|---|
-| Dardos | 2 | Dardo duplo e, depois, dardo triplo |
+| Dardos | 4 | Dardo duplo, dardo triplo, dardo quatruplo e dardo quintruplo |
 | Velocidade do dardo | 5 | Os dardos ficam mais rápidos a cada nível |
 | Velocidade do macaco | 5 | O macaco anda mais rápido a cada nível |
  
