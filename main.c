@@ -165,6 +165,16 @@ int main (void){
     }
 
 while (!WindowShouldClose()) {
+
+    //animação do macaco (congela no pause)
+    if (tela != TELA_PAUSE) {
+        tempo += GetFrameTime();
+        if (tempo >= duracao) {
+            tempo -= duracao;
+            quadro = (quadro + 1) % NUM_QUADROS;
+        }
+    }
+
     if (tela == TELA_MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
             x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; 
@@ -270,9 +280,6 @@ while (!WindowShouldClose()) {
         //o aviso de upgrade some depois de 2 segundos
         if (avisoTempo > 0) avisoTempo -= GetFrameTime();
 
-        if (IsKeyPressed(KEY_H)) {
-            vida--;
-        }
         
         if (IsKeyPressed(KEY_P)) tela = TELA_PAUSE;
 
@@ -292,32 +299,9 @@ while (!WindowShouldClose()) {
             }
             tela = TELA_DERROTA;
         }
-        //aumentar a pontuação para teste (tirar futuramente)
-        if (IsKeyPressed(KEY_K)) {
-            pontuacao += 10;
-        }
-
-        //teste de upgrade (tirar futuramente): U sorteia um upgrade na hora
-        if (IsKeyPressed(KEY_U)) {
-            int sorteado = SortearUpgrade(nivel);
-            if (sorteado >= 0) {
-                nivel[sorteado]++;
-                avisoTexto = TextoUpgrade(sorteado, nivel[sorteado]);
-                avisoTempo = 2.0f;
-            }
-        }
-
-        //teste de vitoria (tirar futuramente)
-        if (IsKeyPressed(KEY_V)) tela = TELA_VITORIA;
     }
 
     else if (tela == TELA_DERROTA) {
-        if (IsKeyPressed(KEY_ENTER)) {
-            tela = TELA_MENU;
-        }
-    }
-    
-    else if (tela == TELA_VITORIA) {
         if (IsKeyPressed(KEY_ENTER)) {
             tela = TELA_MENU;
         }
@@ -413,11 +397,7 @@ while (!WindowShouldClose()) {
             DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
         }
 
-        else if (tela == TELA_VITORIA) {
-            const char *msg = "VOCE VENCEU";
-            DrawText(msg, (LARGURA - MeasureText(msg,40))/2, 240, 40, GREEN);
-            DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
-        }
+
     EndDrawing();
     }
     
