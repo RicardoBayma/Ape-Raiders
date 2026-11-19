@@ -2,6 +2,7 @@
 #include <math.h> //fminf(): devolve o menor numero entre dois numeros decimais
 #include <stdio.h> //para poder abrir o arquivo txt para salvar highscore
 #include "balloons.h"
+#include "estouro.h" //som de estouro dos baloes
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
@@ -123,6 +124,7 @@ int main (void){
     InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
     SetTargetFPS(60);
     SetWindowMinSize(1376, 768);
+    IniciarEstouro(); //liga o audio e carrega o som de estouro
 
     Texture2D sheet = LoadTexture("assets/macaco_sheet.png");
     Texture2D inicial = LoadTexture("assets/inicial.png");
@@ -239,6 +241,8 @@ while (!WindowShouldClose()) {
 
                 //so ganha pontos quando o balao estoura, cria a explosao no centro dele
                 if (pontos > 0) {
+                    TocarEstouro(); //som do balao estourando
+
                     for (int e = 0; e < EXPLOSOES_MAX; e++) {
                         if (!explosoes[e].atv) {
                             explosoes[e].x = atingido->x + atingido->w / 2;
@@ -411,6 +415,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(textExplosao);
     UnloadTexture(rostos);
     FinalizarBalao();
+    FinalizarEstouro(); //limpa o som e desliga o audio
     CloseWindow();
     return 0;
 }
