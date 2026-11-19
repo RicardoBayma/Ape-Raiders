@@ -1,6 +1,12 @@
 # Ape Raiders
 <p>Ape Raiders é jogo 2D baseado no clássico "Space invaders", mas a principal diferença que trazemos a é mistura que fazemos com a franquia "Bloons TD" na qual substituimos a nave principal por um macaco e as naves inimigas sendo balões.</p>
 
+Jogo desenvolvido em C utilizando a biblioteca Raylib.
+
+## Pré-requisitos
+- Compilador C
+- **Raylib 5.0** (ou superior) instalada no sistema
+
 ## Como jogar
  
 O macaco só anda para os lados, dentro da área central da tela (praia), e **atira sozinho**. O objetivo é estourar balões para fazer pontos antes de perder todas as vidas.
@@ -24,7 +30,7 @@ O macaco só anda para os lados, dentro da área central da tela (praia), e **at
  
 ## Upgrades
  
-A cada **10 balões estourados**, o jogo sorteia um upgrade. Eles são **acumulativos** e valem até o fim da partida (voltam a zero quando uma nova partida começa).
+A cada **7 balões estourados**, o jogo sorteia um upgrade. Eles são **acumulativos** e valem até o fim da partida (voltam a zero quando uma nova partida começa).
  
 | Upgrade | Níveis | Efeito |
 |---|---|---|
@@ -33,8 +39,12 @@ A cada **10 balões estourados**, o jogo sorteia um upgrade. Eles são **acumula
 | Velocidade do macaco | 5 | O macaco anda mais rápido a cada nível |
  
 Só entram no sorteio os upgrades que ainda não chegaram ao nível máximo. Ao ganhar um, aparece um aviso no alto da praia.
+
+## Video
+
+* Video mostrando o jogo funcionar: https://youtu.be/cHz6vZ1mK9k
  
----
+## Desenvolvedores do Projeto
 <table>
   <tr>
     <td align="center">
