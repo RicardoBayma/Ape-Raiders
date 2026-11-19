@@ -132,10 +132,9 @@ void SpawnBalao(float x, float y, TiposBalao tipo) {
 int AttBalao(float dt, int pontuacao) {
     int nivel = NivelDificuldade(pontuacao);
     float multVel = 1.0f + 0.08f * nivel;                     //+8% de velocidade por nivel, podemos mudar isso depois se quisermos
-    float intervalo = 1.6f - 0.09f * nivel;                   //spawn cada vez mais rapido
+    float intervalo = 1.6f - 0.09f * nivel;
     if (intervalo < 0.45f) intervalo = 0.45f;
 
-    //spawn nasce logo acima da tela, em x aleatorio dentro da praia
     timerSpawn -= dt;
     if (timerSpawn <= 0) {
         timerSpawn += intervalo;
@@ -161,9 +160,9 @@ int AttBalao(float dt, int pontuacao) {
 
         bool remover = false;
         if (!b->ativo) {
-            remover = true;                                   //estourado
+            remover = true;
         } else if (b->y + b->h >= linhaFim) {
-            chegaram++;                                           //chegou no jogador
+            chegaram++;
             remover = true;
         }
 
@@ -180,11 +179,11 @@ int AttBalao(float dt, int pontuacao) {
 
 void DrawBalao(void) {
     for (Balao *b = lista; b != NULL; b = b->prox) {
-        if (!b->ativo) continue;                              //estourado nesse frame nao desenha
+        if (!b->ativo) continue;
         int idx = IndiceSprite(b);
         const InfoSprite *s = &SPRITES[idx];
 
-        if (tex[idx].id == 0) {                               //se o sprite n carregar ele desenha uma elipse
+        if (tex[idx].id == 0) {
             DrawEllipse((int)(b->x + b->w / 2), (int)(b->y + b->h / 2),
                         b->w / 2, b->h / 2, s->corReserva);
             continue;
@@ -224,10 +223,10 @@ int DanoBalao(Balao *b, int dano) {
     if (b == NULL || !b->ativo) return 0;
     b->hp -= dano;
     if (b->hp <= 0) {
-        b->ativo = false;                                     //sera removido no proximo AttBalao
-        return b->maxHp * 10;                                 //10 pontos no score por "camada" do balao
+        b->ativo = false;
+        return b->maxHp * 10; //10 de score por balao
     }
-    b->speed = VelocidadeBase(b);                             //perdeu camada: muda de cor e fica mais lento
+    b->speed = VelocidadeBase(b);
     return 0;
 }
 
