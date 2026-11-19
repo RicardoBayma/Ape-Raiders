@@ -27,14 +27,14 @@
 #define ROSTO_W 204
 #define ROSTO_H 208
 
-//upgrades (ajuste aqui o balanceamento do jogo)
+//upgrades
 #define VEL_MACACO_BASE 5.0f //velocidade inicial do macaco
 #define VEL_MACACO_NIVEL 0.8f //quanto cada nivel do upgrade soma na velocidade do macaco
 #define DARDOS_VEL_NIVEL 2.5f //quanto cada nivel do upgrade soma na velocidade do dardo
 #define DARDOS_ESPACO 22 //distancia (pixels) entre dardos disparados juntos
 #define ABATES_POR_UPGRADE 7 //baloes estourados para ganhar um upgrade
 
-//interior do segundo quadrado (moldura de baixo do painel direito)
+//interior do segundo quadrado 
 #define UPG_X 1100
 #define UPG_Y 500
 #define UPG_W 225
