@@ -39,6 +39,8 @@
 #define UPG_W 225
 #define UPG_H 240
 
+#define VOLUME_MUSICA 0.5f //volume da musica de fundo
+
 //telas, fiz em enum
 typedef enum {
     TELA_MENU,
@@ -131,6 +133,12 @@ int main (void){
     SetWindowMinSize(1376, 768);
     IniciarEstouro(); //liga o audio e carrega o som de estouro
 
+    //toca a musica de fundo e deixa em loop
+    Music soundtrack = LoadMusicStream("assets/soundtrack.wav");
+    soundtrack.looping = true; //quando acabar, volta do inicio
+    SetMusicVolume(soundtrack, VOLUME_MUSICA);
+    PlayMusicStream(soundtrack);
+
     Texture2D sheet = LoadTexture("assets/macaco_sheet.png");
     Texture2D inicial = LoadTexture("assets/inicial.png");
     Texture2D fundo = LoadTexture("assets/fundo.png");
@@ -173,6 +181,7 @@ int main (void){
 
 while (!WindowShouldClose()) {
 
+    UpdateMusicStream(soundtrack); //musica pausa tb
     //animação do macaco (congela no pause)
     if (tela != TELA_PAUSE) {
         tempo += GetFrameTime();
@@ -289,10 +298,12 @@ while (!WindowShouldClose()) {
         //o aviso de upgrade some depois de 2 segundos
         if (avisoTempo > 0) avisoTempo -= GetFrameTime();
 
-        
-        if (IsKeyPressed(KEY_P)) tela = TELA_PAUSE;
-
         //pressionar P para pausar o jogo e vice-versa
+        if (IsKeyPressed(KEY_P)) {
+            tela = TELA_PAUSE;
+            PauseMusicStream(soundtrack); //pausa a musica junto com o jogo
+        }
+
         //cada balao que chega no macaco tira 1 vida
         vida -= AttBalao(GetFrameTime(), pontuacao);
         
@@ -319,6 +330,7 @@ while (!WindowShouldClose()) {
     else if (tela == TELA_PAUSE) {
         if (IsKeyPressed(KEY_P)) {
             tela = TELA_JOGO;
+            ResumeMusicStream(soundtrack); //volta a musica de onde parou
         }
     }
 
@@ -420,6 +432,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(textExplosao);
     UnloadTexture(rostos);
     FinalizarBalao();
+    UnloadMusicStream(soundtrack);
     FinalizarEstouro();
     CloseWindow();
     return 0;
