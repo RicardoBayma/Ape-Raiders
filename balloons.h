@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "raylib.h"
 
-#define MAX_BALLOONS 25 //maximo de baloes vivos ao mesmo tempo, esta so de teste, temos que mudar depois
+#define MAX_BALLOONS 25
 
 typedef enum{
     BALLOON_RED,
@@ -15,7 +15,7 @@ typedef enum{
 } TiposBalao; //tipos de balao
 
 //informacoes dos baloes, vida, hitbox, velocidade, tempo etc
-typedef struct Balao{
+typedef struct{
     float x, y;        
     float w, h;
     float baseX;
@@ -38,12 +38,11 @@ void SpawnBalao(float x, float y, TiposBalao tipo);
 
 int AttBalao(float deltaTempo, int pontuacao);
 
-void DrawBalao(void); //desenha todos os baloes
+void DrawBalao(void);
 
 void ReiniciarBaloes(void); //zera o timer e listas
 void FinalizarBalao(void);  //limpa textura
 
-//funcoes de para o tiro(alterar pois provavelmente vamos ter que mudar)
 Balao *BalaoEmRetangulo(Rectangle r);
 int DanoBalao(Balao *b, int dano);    //tira vida
 Balao *BalaoMaisBaixo(void);          //balao mais proximo do jogador
