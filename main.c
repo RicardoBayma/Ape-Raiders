@@ -3,6 +3,7 @@
 #include <stdio.h> //para poder abrir o arquivo txt para salvar highscore
 #include "balloons.h"
 #include "estouro.h" //som de estouro dos baloes
+#include "boss.h" //BOSS: chefao que aparece a cada 500 pontos
 
 #define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
 #define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
@@ -73,6 +74,21 @@ typedef struct {
     float tempo; //tempo no quadro atual
     bool atv;
 } Explosao;
+
+//cria uma explosao no primeiro espaco livre do vetor (usada pelos baloes e pelo boss)
+static void CriarExplosao(Explosao explosoes[EXPLOSOES_MAX], float cx, float cy, float tam) {
+    for (int e = 0; e < EXPLOSOES_MAX; e++) {
+        if (!explosoes[e].atv) {
+            explosoes[e].x = cx;
+            explosoes[e].y = cy;
+            explosoes[e].tam = tam;
+            explosoes[e].quadro = 0;
+            explosoes[e].tempo = 0;
+            explosoes[e].atv = true;
+            return;
+        }
+    }
+}
 
 //sorteia um upgrade entre os que ainda nao chegaram no nivel maximo
 //devolve -1 se todos ja estao no maximo
@@ -168,6 +184,7 @@ int main (void){
 
     //limites do spawn dos baloes pra eles n sairem da tela do jogo
     IniciarBalao((Rectangle){ AREA_X, 0, AREA_LARGURA, ALTURA }, y);
+    IniciarBoss((Rectangle){ AREA_X, 0, AREA_LARGURA, ALTURA }, y);
     
     int pontuacao = 0;
     int highScore = 0;
@@ -197,6 +214,7 @@ while (!WindowShouldClose()) {
             vida = VIDAS_MAX;
             pontuacao = 0;
             ReiniciarBaloes(); //limpa os baloes da partida passada
+            ReiniciarBoss(); //tira o boss da partida passada e volta o primeiro para 500 pontos
             for (int i = 0; i < DARDOS_MAX; i++) dardos[i].atv = false; //limpa os dardos
             for (int e = 0; e < EXPLOSOES_MAX; e++) explosoes[e].atv = false; //limpa as explosoes
             for (int u = 0; u < UPG_TOTAL; u++) nivel[u] = 0; //zera os upgrades da partida passada
@@ -235,7 +253,7 @@ while (!WindowShouldClose()) {
             if (criados > 0) recarga = DARDOS_RECARGA;
         }
 
-        //move os dardos, checa se acertou algum balao
+        //move os dardos, checa se acertou algum balao (ou o boss)
         for (int i = 0; i < DARDOS_MAX; i++) {
             if (!dardos[i].atv) continue;
             dardos[i].y -= velDardo;
@@ -247,6 +265,23 @@ while (!WindowShouldClose()) {
 
             //define a hitbox do dardo para ser somente a ponta do png
             Rectangle hitDardo = { dardos[i].x + textDardo.width / 2.0f - 4, dardos[i].y, 8, textDardo.height / 2.0f };
+
+            //os dardos so podem acertar ele
+            if (BossAtivo()) {
+                int resultado = AcertarBoss(hitDardo);
+                if (resultado != BOSS_ERROU) dardos[i].atv = false;
+
+                if (resultado == BOSS_MORREU) {
+                    TocarEstouro();
+                    Rectangle rb = RetanguloBoss();
+                    CriarExplosao(explosoes, rb.x + rb.width / 2, rb.y + rb.height / 2, rb.width * 1.5f);
+                    pontuacao += BOSS_PONTOS;
+                    avisoTexto = "BOSS DERROTADO!";
+                    avisoTempo = 2.0f;
+                }
+                continue; //pula a parte dos baloes
+            }
+
             Balao *atingido = BalaoEmRetangulo(hitDardo);
             if (atingido != NULL) {
                 int pontos = DanoBalao(atingido, 1);
@@ -257,17 +292,8 @@ while (!WindowShouldClose()) {
                 if (pontos > 0) {
                     TocarEstouro(); //som do balao estourando
 
-                    for (int e = 0; e < EXPLOSOES_MAX; e++) {
-                        if (!explosoes[e].atv) {
-                            explosoes[e].x = atingido->x + atingido->w / 2;
-                            explosoes[e].y = atingido->y + atingido->h / 2;
-                            explosoes[e].tam = atingido->w * 1.5f; //ajuste da escala em relacao ao balao
-                            explosoes[e].quadro = 0;
-                            explosoes[e].tempo = 0;
-                            explosoes[e].atv = true;
-                            break;
-                        }
-                    }
+                    //ajuste da escala da explosao em relacao ao balao: 1.5
+                    CriarExplosao(explosoes, atingido->x + atingido->w / 2, atingido->y + atingido->h / 2, atingido->w * 1.5f);
 
                     //conta o balao estourado; ao completar, sorteia um upgrade
                     abates++;
@@ -304,8 +330,19 @@ while (!WindowShouldClose()) {
             PauseMusicStream(soundtrack); //pausa a musica junto com o jogo
         }
 
-        //cada balao que chega no macaco tira 1 vida
-        vida -= AttBalao(GetFrameTime(), pontuacao);
+        if (BossAtivo()) {
+            vida -= AttBoss(GetFrameTime()); //se o boss chegar no macaco, tira 1 vida
+        } else {
+            //cada balao que chega no macaco tira 1 vida
+            vida -= AttBalao(GetFrameTime(), pontuacao);
+
+            //substitui os baloes pelo boss
+            if (ChecarBoss(pontuacao)) {
+                ReiniciarBaloes();
+                avisoTexto = "CUIDADO: BOSS!";
+                avisoTempo = 2.0f;
+            }
+        }
         
         if (vida <= 0) {
             // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
@@ -351,7 +388,10 @@ while (!WindowShouldClose()) {
 
         else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
             DrawTexture(fundo, 0, 0, WHITE);
-            DrawBalao();
+            
+            //enquanto o boss existe, substitui os baloes pelo boss
+            if (BossAtivo()) DrawBoss();
+            else DrawBalao();
 
             for (int i = 0; i < DARDOS_MAX; i++) {
                 if (dardos[i].atv) DrawTexture(textDardo, (int)dardos[i].x, (int)dardos[i].y, WHITE);
@@ -432,6 +472,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(textExplosao);
     UnloadTexture(rostos);
     FinalizarBalao();
+    FinalizarBoss();
     UnloadMusicStream(soundtrack);
     FinalizarEstouro();
     CloseWindow();
