@@ -56,7 +56,7 @@ typedef enum {
     UPG_TOTAL
 } Upgrade;
 
-static const int NIVEL_MAX[UPG_TOTAL] = { 2, 5, 5 }; //dardo: ate triplo (2 extras); velocidades: ate nivel 5
+static const int NIVEL_MAX[UPG_TOTAL] = { 4, 5, 5 }; //dardo: ate quinto (4 extras); velocidades: ate nivel 5
 static const char *NOME_UPG[UPG_TOTAL] = { "DARDOS", "VEL. TIRO", "VEL. MOVER" };
 
 typedef struct {
@@ -86,7 +86,12 @@ static int SortearUpgrade(const int nivel[UPG_TOTAL]) {
 
 //texto do aviso que aparece na tela quando ganha o upgrade
 static const char *TextoUpgrade(int tipo, int nivelNovo) {
-    if (tipo == UPG_DARDO) return (nivelNovo == 1) ? "DARDO DUPLO!" : "DARDO TRIPLO!";
+    if (tipo == UPG_DARDO) {
+        if (nivelNovo == 1) return "DARDO DUPLO!";
+        if (nivelNovo == 2) return "DARDO TRIPLO!";
+        if (nivelNovo == 3) return "DARDO QUADRUPLO!";
+        return "DARDO QUINTRUPLO!";
+    }
     if (tipo == UPG_VEL_DARDO) return "DARDO MAIS RAPIDO!";
     return "MACACO MAIS RAPIDO!";
 }
@@ -415,7 +420,7 @@ while (!WindowShouldClose()) {
     UnloadTexture(textExplosao);
     UnloadTexture(rostos);
     FinalizarBalao();
-    FinalizarEstouro(); //limpa o som e desliga o audio
+    FinalizarEstouro();
     CloseWindow();
     return 0;
 }
