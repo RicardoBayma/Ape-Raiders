@@ -31,7 +31,7 @@
 #define VEL_MACACO_NIVEL 0.8f //quanto cada nivel do upgrade soma na velocidade do macaco
 #define DARDOS_VEL_NIVEL 2.5f //quanto cada nivel do upgrade soma na velocidade do dardo
 #define DARDOS_ESPACO 22 //distancia (pixels) entre dardos disparados juntos
-#define ABATES_POR_UPGRADE 10 //baloes estourados para ganhar um upgrade
+#define ABATES_POR_UPGRADE 7 //baloes estourados para ganhar um upgrade
 
 //interior do segundo quadrado (moldura de baixo do painel direito)
 #define UPG_X 1100
@@ -107,7 +107,7 @@ static void DesenharPainelUpgrades(const int nivel[UPG_TOTAL], int abates) {
     y0 += 22;
 
     for (int i = 0; i < UPG_TOTAL; i++) {
-        //no dardo mostra a quantidade atual (x1, x2, x3); nos outros, so o nome
+        //no dardo mostra a quantidade atual; nos outros, so o nome
         const char *rotulo = (i == UPG_DARDO) ? TextFormat("DARDOS x%d", 1 + nivel[i]) : NOME_UPG[i];
         DrawText(rotulo, x0, y0, 14, WHITE);
 
