@@ -7,6 +7,31 @@ Jogo desenvolvido em C utilizando a biblioteca Raylib.
 - Compilador C
 - **Raylib 5.0** (ou superior) instalada no sistema
 
+coloca assim:
+
+
+## Como Rodar
+
+Primeiramente Instale o compilador e o pacote de desenvolvimento da Raylib diretamente pelo terminal:
+
+|Linux (Ubuntu / Debian)|
+|---|
+|sudo apt update|
+|sudo apt install build-essential libraylib-dev|
+
+Segundo: clone o repositório do jogo na sua maquina e abra a pasta raiz do jogo (onde estão os arquivos main.c, balloons.c e assets) e depois execute esse comando:
+
+|Linux|
+|---|
+|gcc *.c -o main -lraylib -lm -lpthread -ldl -lrt -lX11|
+---
+Também temos o Makefile onde é apenas necessário dar:
+
+|Makefile|
+|---|
+|make|
+|./jogo|
+
 ## Como jogar
  
 O macaco só anda para os lados, dentro da área central da tela (praia), e **atira sozinho**. O objetivo é estourar balões para fazer pontos antes de perder todas as vidas.
