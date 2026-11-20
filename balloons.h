@@ -15,7 +15,7 @@ typedef enum{
 } TiposBalao; //tipos de balao
 
 //informacoes dos baloes, vida, hitbox, velocidade, tempo etc
-typedef struct{
+typedef struct Balao{
     float x, y;        
     float w, h;
     float baseX;
