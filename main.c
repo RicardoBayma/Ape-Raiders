@@ -1,157 +1,59 @@
 #include "raylib.h"
-#include <math.h> //fminf(): devolve o menor numero entre dois numeros decimais
-#include <stdio.h> //para poder abrir o arquivo txt para salvar highscore
+#include <math.h>
+#include <stdio.h>
 #include "balloons.h"
 #include "estouro.h" //som de estouro dos baloes
-#include "boss.h" //BOSS: chefao que aparece a cada 500 pontos
+#include "boss.h" //chefao
+#include "explosao.h" //animacao da explosao
+#include "upgrades.h" //upgrades
+#include "ranking.h" //Top 5 do ranking salvo aqui
 
-#define NUM_QUADROS 22 //quantidade de quadros da animação do macaco
-#define TAM_QUADRO 128 //largura e altura de cada quadro na sprite (pixels)
-#define LARGURA 1376 //largura do 'mundo'
-#define ALTURA 768 //altura do 'mundo'
+#define NUM_QUADROS 22 //quantidade de frames do macaco animacao
+#define TAM_QUADRO 128 //area do sprote
+#define LARGURA 1376 //largura do mapa
+#define ALTURA 768 //atura do mapa
 #define AREA_X 400
 #define AREA_LARGURA 588
 #define VIDAS_MAX 3
-#define DARDOS_MAX 20 //numero maximo de dardos na tela para não sobrecarregar
-#define DARDOS_VEL 15.0f //ajuste da velocidade do tiro
-#define DARDOS_RECARGA 0.5f //intervalo do tiro automatico
-
-#define EXPLOSOES_MAX 20 //maximo de explosoes na tela ao mesmo tempo
-#define EXPLOSAO_QUADROS 10 //quantidade de quadros da explosao na sheet
-#define EXPLOSAO_COLUNAS 3 //quadros por linha na sheet
-#define EXPLOSAO_TAM 200 //largura e altura de cada quadro da sheet (pixels)
-#define EXPLOSAO_DURACAO 0.08f //segundos que cada quadro fica na tela
-
-#define ROSTO_X 88
-#define ROSTO_Y 280
-#define ROSTO_W 204
-#define ROSTO_H 208
-
-//upgrades
+#define DARDOS_MAX 20 //numero maximo de dardos na tela pra n sobrecarregar
+#define DARDOS_VEL 15.0f //velocidade dardo
+#define DARDOS_RECARGA 0.5f //intervalo do tiro
+#define DARDOS_ESPACO 22 //distancia entre dardos juntos
 #define VEL_MACACO_BASE 5.0f //velocidade inicial do macaco
-#define VEL_MACACO_NIVEL 0.8f //quanto cada nivel do upgrade soma na velocidade do macaco
-#define DARDOS_VEL_NIVEL 2.5f //quanto cada nivel do upgrade soma na velocidade do dardo
-#define DARDOS_ESPACO 22 //distancia (pixels) entre dardos disparados juntos
-#define ABATES_POR_UPGRADE 7 //baloes estourados para ganhar um upgrade
-
-//interior do segundo quadrado 
-#define UPG_X 1100
-#define UPG_Y 500
-#define UPG_W 225
-#define UPG_H 240
-
-#define VOLUME_MUSICA 0.5f //volume da musica de fundo
+#define VEL_MACACO_NIVEL 0.8f //velocidade adicionada pro macaco por upgrade
+#define DARDOS_VEL_NIVEL 2.5f //velocidade adicionada pro dardo por upgrade
+#define ROSTO_W 204 //cada rosto do macaco_rostos.png
+#define ROSTO_H 208
+#define VOLUME_MUSICA 0.5f //volume da musica
 
 //telas, fiz em enum
-typedef enum {
-    TELA_MENU,
-    TELA_JOGO,
-    TELA_DERROTA,
-    TELA_VITORIA,
-    TELA_PAUSE
-} Tela;
-
-//tipos de upgrade (UPG_TOTAL = quantidade de tipos, serve de tamanho para os vetores)
-typedef enum {
-    UPG_DARDO,
-    UPG_VEL_DARDO,
-    UPG_VEL_MOV,
-    UPG_TOTAL
-} Upgrade;
-
-static const int NIVEL_MAX[UPG_TOTAL] = { 4, 5, 5 }; //dardo: ate quinto (4 extras); velocidades: ate nivel 5
-static const char *NOME_UPG[UPG_TOTAL] = { "DARDOS", "VEL. TIRO", "VEL. MOVER" };
+typedef enum { TELA_MENU, TELA_JOGO, TELA_DERROTA, TELA_PAUSE } Tela;
 
 typedef struct {
     float x, y;
     bool atv;
 } Dardo;
 
-typedef struct {
-    float x, y; //centro da explosao
-    float tam; //tamanho desenhado na tela
-    int quadro; //quadro atual da animacao
-    float tempo; //tempo no quadro atual
-    bool atv;
-} Explosao;
-
-//cria uma explosao no primeiro espaco livre do vetor (usada pelos baloes e pelo boss)
-static void CriarExplosao(Explosao explosoes[EXPLOSOES_MAX], float cx, float cy, float tam) {
-    for (int e = 0; e < EXPLOSOES_MAX; e++) {
-        if (!explosoes[e].atv) {
-            explosoes[e].x = cx;
-            explosoes[e].y = cy;
-            explosoes[e].tam = tam;
-            explosoes[e].quadro = 0;
-            explosoes[e].tempo = 0;
-            explosoes[e].atv = true;
-            return;
-        }
-    }
+static const char *avisoTexto = "";
+static float avisoTempo = 0;
+static void Avisar(const char *texto) {
+    avisoTexto = texto;
+    avisoTempo = 2.0f;
 }
 
-//sorteia um upgrade entre os que ainda nao chegaram no nivel maximo
-//devolve -1 se todos ja estao no maximo
-static int SortearUpgrade(const int nivel[UPG_TOTAL]) {
-    int disponiveis[UPG_TOTAL];
-    int n = 0;
-    for (int i = 0; i < UPG_TOTAL; i++) {
-        if (nivel[i] < NIVEL_MAX[i]) disponiveis[n++] = i;
-    }
-    if (n == 0) return -1;
-    return disponiveis[GetRandomValue(0, n - 1)];
-}
-
-//texto do aviso que aparece na tela quando ganha o upgrade
-static const char *TextoUpgrade(int tipo, int nivelNovo) {
-    if (tipo == UPG_DARDO) {
-        if (nivelNovo == 1) return "DARDO DUPLO!";
-        if (nivelNovo == 2) return "DARDO TRIPLO!";
-        if (nivelNovo == 3) return "DARDO QUADRUPLO!";
-        return "DARDO QUINTRUPLO!";
-    }
-    if (tipo == UPG_VEL_DARDO) return "DARDO MAIS RAPIDO!";
-    return "MACACO MAIS RAPIDO!";
-}
-
-//desenha o painel de upgrades dentro do segundo quadrado
-static void DesenharPainelUpgrades(const int nivel[UPG_TOTAL], int abates) {
-    int x0 = UPG_X + 8;       //margem interna
-    int larg = UPG_W - 16;    //largura util
-    int y0 = UPG_Y + 6;
-
-    const char *titulo = "UPGRADES";
-    DrawText(titulo, UPG_X + (UPG_W - MeasureText(titulo, 14)) / 2, y0, 14, GOLD);
-    y0 += 22;
-
-    for (int i = 0; i < UPG_TOTAL; i++) {
-        //no dardo mostra a quantidade atual; nos outros, so o nome
-        const char *rotulo = (i == UPG_DARDO) ? TextFormat("DARDOS x%d", 1 + nivel[i]) : NOME_UPG[i];
-        DrawText(rotulo, x0, y0, 14, WHITE);
-
-        //um quadradinho por nivel: dourado = ja ganhou, apagado = falta ganhar
-        for (int k = 0; k < NIVEL_MAX[i]; k++) {
-            Color cor = (k < nivel[i]) ? GOLD : Fade(WHITE, 0.2f);
-            DrawRectangle(x0 + k * 12, y0 + 17, 8, 8, cor);
-        }
-        y0 += 32;
-    }
-
-    //barra de progresso ate o proximo upgrade
-    DrawRectangle(x0, y0 + 4, larg, 10, Fade(BLACK, 0.5f));
-    DrawRectangle(x0, y0 + 4, larg * abates / ABATES_POR_UPGRADE, 10, SKYBLUE);
-    DrawRectangleLines(x0, y0 + 4, larg, 10, WHITE);
+static void TextoMeio(const char *t, int y, int tam, Color cor) {
+    DrawText(t, (LARGURA - MeasureText(t, tam)) / 2, y, tam, cor);
 }
 
 int main (void){
     InitWindow(LARGURA, ALTURA, "Ape Raiders"); //cria a janela inicial
     SetTargetFPS(60);
-    SetWindowMinSize(1376, 768);
-    IniciarEstouro(); //liga o audio e carrega o som de estouro
+    SetWindowMinSize(LARGURA, ALTURA);
+    IniciarEstouro();
 
-    //toca a musica de fundo e deixa em loop
+    //toca a musica de fundo e deixa em loop, se der a gente bota mais musicas
     Music soundtrack = LoadMusicStream("assets/soundtrack.wav");
-    soundtrack.looping = true; //quando acabar, volta do inicio
+    soundtrack.looping = true;
     SetMusicVolume(soundtrack, VOLUME_MUSICA);
     PlayMusicStream(soundtrack);
 
@@ -159,194 +61,136 @@ int main (void){
     Texture2D inicial = LoadTexture("assets/inicial.png");
     Texture2D fundo = LoadTexture("assets/fundo.png");
     Texture2D derrota = LoadTexture("assets/derrota.png");
-    Texture2D rostos = LoadTexture("assets/macaco_rostos.png"); //3 rostos de 204x208 lado a lado
+    Texture2D rostos = LoadTexture("assets/macaco_rostos.png");
     Texture2D coracao = LoadTexture("assets/coracao.png");
-    SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
     Texture2D textDardo = LoadTexture("assets/dardo.png");
-    Dardo dardos[DARDOS_MAX] = {0};
-    float recarga = 0;//tempo para poder atirar novamente
-    Texture2D textExplosao = LoadTexture("assets/explode.png");
-    SetTextureFilter(textExplosao, TEXTURE_FILTER_BILINEAR); //deixa a explosao mais sutil no fim
-    Explosao explosoes[EXPLOSOES_MAX] = {0};
+    SetTextureFilter(coracao, TEXTURE_FILTER_TRILINEAR);
+    IniciarExplosoes();
 
     Tela tela = TELA_MENU;
-
-    float x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2;
-    float y = ALTURA - TAM_QUADRO - 10;
+    Dardo dardos[DARDOS_MAX] = {0};
+    float recarga = 0;
+    float x = 0, y = ALTURA - TAM_QUADRO - 10;
     int quadro = 0;
     float tempo = 0;
-    float duracao = 1.0f / 12.0f;
-    int vida = VIDAS_MAX;
-    int nivel[UPG_TOTAL] = {0}; //nivel atual de cada upgrade (acumulativo)
-    int abates = 0; //baloes estourados desde o ultimo upgrade
-    float avisoTempo = 0; //tempo que o aviso de upgrade ainda fica na tela
-    const char *avisoTexto = "";
+    int vida = 0, pontuacao = 0, baloesEstourados = 0, highScore = 0;
 
     //limites do spawn dos baloes pra eles n sairem da tela do jogo
     IniciarBalao((Rectangle){ AREA_X, 0, AREA_LARGURA, ALTURA }, y);
     IniciarBoss((Rectangle){ AREA_X, 0, AREA_LARGURA, ALTURA }, y);
-    
-    int pontuacao = 0;
-    int highScore = 0;
 
     FILE *ficheiro = fopen("highscore.txt", "r");
-
     if (ficheiro != NULL) {
         fscanf(ficheiro, "%d", &highScore);
         fclose(ficheiro);
     }
+    CarregarRanking(); //le o Top 5 salvo nas partidas anteriores
 
 while (!WindowShouldClose()) {
+    float dt = GetFrameTime();
+    UpdateMusicStream(soundtrack);
 
-    UpdateMusicStream(soundtrack); //musica pausa tb
-    //animação do macaco (congela no pause)
-    if (tela != TELA_PAUSE) {
-        tempo += GetFrameTime();
-        if (tempo >= duracao) {
-            tempo -= duracao;
-            quadro = (quadro + 1) % NUM_QUADROS;
-        }
+    //animacao do macaco 12 fps
+    if (tela != TELA_PAUSE && (tempo += dt) >= 1.0f / 12.0f) {
+        tempo -= 1.0f / 12.0f;
+        quadro = (quadro + 1) % NUM_QUADROS;
     }
 
     if (tela == TELA_MENU) {
-        if (IsKeyPressed(KEY_ENTER)) {
-            x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2; 
+        if (IsKeyPressed(KEY_ENTER)) { //comeca uma partida nova do zero
+            x = AREA_X + (AREA_LARGURA - TAM_QUADRO) / 2;
             vida = VIDAS_MAX;
-            pontuacao = 0;
-            ReiniciarBaloes(); //limpa os baloes da partida passada
-            ReiniciarBoss(); //tira o boss da partida passada e volta o primeiro para 500 pontos
-            for (int i = 0; i < DARDOS_MAX; i++) dardos[i].atv = false; //limpa os dardos
-            for (int e = 0; e < EXPLOSOES_MAX; e++) explosoes[e].atv = false; //limpa as explosoes
-            for (int u = 0; u < UPG_TOTAL; u++) nivel[u] = 0; //zera os upgrades da partida passada
-            abates = 0;
-            avisoTempo = 0;
-            recarga = 0;
+            pontuacao = baloesEstourados = 0;
+            recarga = avisoTempo = 0;
+            for (int i = 0; i < DARDOS_MAX; i++) dardos[i].atv = false;
+            ReiniciarBaloes();
+            ReiniciarBoss();
+            LimparExplosoes();
+            ReiniciarUpgrades();
             tela = TELA_JOGO;
         }
     }
 
     else if (tela == TELA_JOGO) {
-        //valores que dependem dos upgrades (recalculados todo frame)
+        //valores que dependem dos upgrades
         float velocidade = VEL_MACACO_BASE + nivel[UPG_VEL_MOV] * VEL_MACACO_NIVEL;
         float velDardo = DARDOS_VEL + nivel[UPG_VEL_DARDO] * DARDOS_VEL_NIVEL;
-        int qtdDardos = 1 + nivel[UPG_DARDO]; //1 = simples, 2 = duplo, 3 = triplo
+        int qtdDardos = 1 + nivel[UPG_DARDO]; //1 é um, 2 = duplo, 3 = triplo...
 
-        //movimentação do macaco
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {if (x > AREA_X) x -= velocidade;}
-        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {if (x < AREA_X + AREA_LARGURA - TAM_QUADRO) x+= velocidade;}
-
+        //movimentacao do macaco
+        if ((IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) && x > AREA_X) x -= velocidade;
+        if ((IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) && x < AREA_X + AREA_LARGURA - TAM_QUADRO) x += velocidade;
         if (IsKeyPressed(KEY_M)) tela = TELA_MENU;
-        //tiro automatico
-        recarga-=GetFrameTime();
-        if(recarga <=0){
+
+        //tiro automatico com os dardo centralizados no macaco
+        if ((recarga -= dt) <= 0) {
             int criados = 0;
-            for(int i=0;i<DARDOS_MAX && criados < qtdDardos;i++){
-                if(!dardos[i].atv){
-                    //espalha os dardos lado a lado, centralizados no macaco
-                    float deslocamento = (criados - (qtdDardos - 1) / 2.0f) * DARDOS_ESPACO;
-                    dardos[i].x = x + (TAM_QUADRO - textDardo.width) / 2.0f + deslocamento;
-                    dardos[i].y = y - textDardo.height / 2.0f;
-                    dardos[i].atv = true;
-                    criados++;
-                }
+            for (int i = 0; i < DARDOS_MAX && criados < qtdDardos; i++) {
+                if (dardos[i].atv) continue;
+                float deslocamento = (criados - (qtdDardos - 1) / 2.0f) * DARDOS_ESPACO;
+                dardos[i] = (Dardo){ x + (TAM_QUADRO - textDardo.width) / 2.0f + deslocamento, y - textDardo.height / 2.0f, true };
+                criados++;
             }
             if (criados > 0) recarga = DARDOS_RECARGA;
         }
 
-        //move os dardos, checa se acertou algum balao (ou o boss)
+        //move os dardos e checa se acertaram o boss ou algum balao
         for (int i = 0; i < DARDOS_MAX; i++) {
             if (!dardos[i].atv) continue;
             dardos[i].y -= velDardo;
+            if (dardos[i].y + textDardo.height < 0) { dardos[i].atv = false; continue; }
 
-            if (dardos[i].y + textDardo.height < 0) { //dardo saiu por cima da tela
-                dardos[i].atv = false;
+            //hitbox so na ponta do dardo
+            Rectangle hitDardo = { dardos[i].x + textDardo.width / 2.0f - 4, dardos[i].y, 8, textDardo.height / 2.0f };
+
+            if (BossAtivo()) { //com apenas o boss os dardos so acertam ele
+                int resultado = AcertarBoss(hitDardo);
+                if (resultado != BOSS_ERROU) dardos[i].atv = false;
+                if (resultado == BOSS_MORREU) {
+                    Rectangle rb = RetanguloBoss();
+                    TocarEstouro();
+                    CriarExplosao(rb.x + rb.width / 2, rb.y + rb.height / 2, rb.width * 1.5f);
+                    pontuacao += BOSS_PONTOS;
+                    baloesEstourados++; //o boss tambem e um balao
+                    Avisar("BOSS DERROTADO!");
+                }
                 continue;
             }
 
-            //define a hitbox do dardo para ser somente a ponta do png
-            Rectangle hitDardo = { dardos[i].x + textDardo.width / 2.0f - 4, dardos[i].y, 8, textDardo.height / 2.0f };
-
-            //os dardos so podem acertar ele
-            if (BossAtivo()) {
-                int resultado = AcertarBoss(hitDardo);
-                if (resultado != BOSS_ERROU) dardos[i].atv = false;
-
-                if (resultado == BOSS_MORREU) {
-                    TocarEstouro();
-                    Rectangle rb = RetanguloBoss();
-                    CriarExplosao(explosoes, rb.x + rb.width / 2, rb.y + rb.height / 2, rb.width * 1.5f);
-                    pontuacao += BOSS_PONTOS;
-                    avisoTexto = "BOSS DERROTADO!";
-                    avisoTempo = 2.0f;
-                }
-                continue; //pula a parte dos baloes
-            }
-
             Balao *atingido = BalaoEmRetangulo(hitDardo);
-            if (atingido != NULL) {
-                int pontos = DanoBalao(atingido, 1);
+            if (atingido == NULL) continue;
+            dardos[i].atv = false;
+            int pontos = DanoBalao(atingido, 1);
+            if (pontos > 0) { //so ganha pontos quando o balao estoura
                 pontuacao += pontos;
-                dardos[i].atv = false;
-
-                //so ganha pontos quando o balao estoura, cria a explosao no centro dele
-                if (pontos > 0) {
-                    TocarEstouro(); //som do balao estourando
-
-                    //ajuste da escala da explosao em relacao ao balao: 1.5
-                    CriarExplosao(explosoes, atingido->x + atingido->w / 2, atingido->y + atingido->h / 2, atingido->w * 1.5f);
-
-                    //conta o balao estourado; ao completar, sorteia um upgrade
-                    abates++;
-                    if (abates >= ABATES_POR_UPGRADE) {
-                        abates = 0;
-                        int sorteado = SortearUpgrade(nivel);
-                        if (sorteado >= 0) {
-                            nivel[sorteado]++;
-                            avisoTexto = TextoUpgrade(sorteado, nivel[sorteado]);
-                            avisoTempo = 2.0f;
-                        }
-                    }
-                }
+                baloesEstourados++;
+                TocarEstouro();
+                CriarExplosao(atingido->x + atingido->w / 2, atingido->y + atingido->h / 2, atingido->w * 1.5f);
+                const char *upgrade = ContarAbate(); //a cada 7 baloes ganha um upgrade
+                if (upgrade != NULL) Avisar(upgrade);
             }
         }
 
-        //percorre a spreadsheet da explosao
-        for (int e = 0; e < EXPLOSOES_MAX; e++) {
-            if (!explosoes[e].atv) continue;
-            explosoes[e].tempo += GetFrameTime();
-            if (explosoes[e].tempo >= EXPLOSAO_DURACAO) {
-                explosoes[e].tempo -= EXPLOSAO_DURACAO;
-                explosoes[e].quadro++;
-                if (explosoes[e].quadro >= EXPLOSAO_QUADROS) explosoes[e].atv = false;
-            }
-        }
+        AttExplosoes(dt);
+        if (avisoTempo > 0) avisoTempo -= dt;
 
-        //o aviso de upgrade some depois de 2 segundos
-        if (avisoTempo > 0) avisoTempo -= GetFrameTime();
-
-        //pressionar P para pausar o jogo e vice-versa
         if (IsKeyPressed(KEY_P)) {
             tela = TELA_PAUSE;
-            PauseMusicStream(soundtrack); //pausa a musica junto com o jogo
+            PauseMusicStream(soundtrack);
         }
 
-        if (BossAtivo()) {
-            vida -= AttBoss(GetFrameTime()); //se o boss chegar no macaco, tira 1 vida
-        } else {
-            //cada balao que chega no macaco tira 1 vida
-            vida -= AttBalao(GetFrameTime(), pontuacao);
-
-            //substitui os baloes pelo boss
-            if (ChecarBoss(pontuacao)) {
+        //o boss ou os baloes que chegam no macaco tiram vida
+        if (BossAtivo()) vida -= AttBoss(dt);
+        else {
+            vida -= AttBalao(dt, pontuacao);
+            if (ChecarBoss(pontuacao)) { //chegou em 500, 1000...: troca os baloes pelo boss
                 ReiniciarBaloes();
-                avisoTexto = "CUIDADO: BOSS!";
-                avisoTempo = 2.0f;
+                Avisar("CUIDADO: BOSS!");
             }
         }
-        
+
         if (vida <= 0) {
-            // ESCRITA NO ARQUIVO: Salva o novo recorde se bateu
-            if (pontuacao > highScore) {
+            if (pontuacao > highScore) { //salva o novo recorde
                 highScore = pontuacao;
                 FILE *ficheiroEscrita = fopen("highscore.txt", "w");
                 if (ficheiroEscrita != NULL) {
@@ -355,113 +199,83 @@ while (!WindowShouldClose()) {
                 }
             }
             tela = TELA_DERROTA;
+            AbrirPopupNome(); //o pop-up do nome aparece assim que a derrota abre
         }
     }
 
     else if (tela == TELA_DERROTA) {
-        if (IsKeyPressed(KEY_ENTER)) {
-            tela = TELA_MENU;
-        }
+        if (popupAberto) AtualizarPopupNome(pontuacao);
+        else if (IsKeyPressed(KEY_ENTER)) tela = TELA_MENU;
     }
 
-    else if (tela == TELA_PAUSE) {
-        if (IsKeyPressed(KEY_P)) {
-            tela = TELA_JOGO;
-            ResumeMusicStream(soundtrack); //volta a musica de onde parou
-        }
+    else if (tela == TELA_PAUSE && IsKeyPressed(KEY_P)) {
+        tela = TELA_JOGO;
+        ResumeMusicStream(soundtrack);
     }
-
-    Rectangle origem = { quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO };
 
     BeginDrawing();
         ClearBackground(BLACK);
 
         if (tela == TELA_MENU) {
             DrawTexture(inicial, 0, 0, WHITE);
-
-            if ((int)(GetTime() * 2) % 2 == 0) {
-                const char *msg = "PRESSIONE ENTER PARA JOGAR";
-                DrawText(msg, (LARGURA - MeasureText(msg, 24)) / 2, 700, 24, WHITE);
-            }
+            if ((int)(GetTime() * 2) % 2 == 0) TextoMeio("PRESSIONE ENTER PARA JOGAR", 700, 24, WHITE);
             DrawText("ESC PARA SAIR", 10, ALTURA - 30, 20, WHITE);
         }
 
         else if (tela == TELA_JOGO || tela == TELA_PAUSE) {
             DrawTexture(fundo, 0, 0, WHITE);
-            
-            //enquanto o boss existe, substitui os baloes pelo boss
             if (BossAtivo()) DrawBoss();
             else DrawBalao();
-
             for (int i = 0; i < DARDOS_MAX; i++) {
                 if (dardos[i].atv) DrawTexture(textDardo, (int)dardos[i].x, (int)dardos[i].y, WHITE);
             }
+            DrawExplosoes();
 
-            //desenho das explosoes
-            for (int e = 0; e < EXPLOSOES_MAX; e++) {
-                if (!explosoes[e].atv) continue;
-                int q = explosoes[e].quadro;
-                Rectangle recorte = { (q % EXPLOSAO_COLUNAS) * EXPLOSAO_TAM, (q / EXPLOSAO_COLUNAS) * EXPLOSAO_TAM, EXPLOSAO_TAM, EXPLOSAO_TAM };
-                float t = explosoes[e].tam;
-                Rectangle destino = { explosoes[e].x - t / 2, explosoes[e].y - t / 2, t, t };
-                DrawTexturePro(textExplosao, recorte, destino, (Vector2){0, 0}, 0.0f, WHITE);
-            }
+            //redesenha as laterais do fundo por cima, para nada aparecer fora da praia
+            DrawTextureRec(fundo, (Rectangle){ 0, 0, AREA_X, ALTURA }, (Vector2){ 0, 0 }, WHITE);
+            DrawTextureRec(fundo, (Rectangle){ AREA_X + AREA_LARGURA, 0, LARGURA - (AREA_X + AREA_LARGURA), ALTURA }, (Vector2){ AREA_X + AREA_LARGURA, 0 }, WHITE);
+            DrawTextureRec(sheet, (Rectangle){ quadro * TAM_QUADRO, 0, TAM_QUADRO, TAM_QUADRO }, (Vector2){ x, y }, WHITE);
 
-            Rectangle recEsq = {0, 0, AREA_X, ALTURA};
-            Rectangle recDir = {AREA_X + AREA_LARGURA, 0, LARGURA - (AREA_X + AREA_LARGURA), ALTURA};
-            DrawTextureRec(fundo, recEsq, (Vector2){recEsq.x, recEsq.y}, WHITE);
-            DrawTextureRec(fundo, recDir, (Vector2){recDir.x, recDir.y}, WHITE);
-            DrawTextureRec(sheet, origem, (Vector2){ x, y }, WHITE);
-
-            // quantas vidas já foram perdidas: 0 = normal, 1 = machucado, 2 = desmaiado
+            //rosto: 0 = normal, 1 = machucado, 2 = desmaiado, dps disso ele morre e o jogador perde
             int perdidas = VIDAS_MAX - vida;
-            if (perdidas < 0) perdidas = 0;
-            if (perdidas > 2) perdidas = 2;   // só existem 3 rostos
+            if (perdidas > 2) perdidas = 2;
+            DrawTextureRec(rostos, (Rectangle){ perdidas * ROSTO_W, 0, ROSTO_W, ROSTO_H }, (Vector2){ 88, 280 }, WHITE);
 
-            Rectangle recRosto = { perdidas * ROSTO_W, 0, ROSTO_W, ROSTO_H };   // recorta o rosto certo
-            DrawTextureRec(rostos, recRosto, (Vector2){ ROSTO_X, ROSTO_Y }, WHITE);
-
+            //coracoes centralizados no quadro de baixo da esquerda
             int espaco = 12;
-            int larguratotal = VIDAS_MAX * coracao.width + (VIDAS_MAX - 1) * espaco;
-            int inicioX = (385 - larguratotal) / 2;
-            int coracaoY = 650 + (85 - coracao.height) / 2;
-
+            int inicioX = (385 - (VIDAS_MAX * coracao.width + (VIDAS_MAX - 1) * espaco)) / 2;
             for (int i = 0; i < VIDAS_MAX; i++) {
-                Color cor = (i < vida) ? WHITE : Fade(WHITE, 0.2f);
-                DrawTexture(coracao, inicioX + i * (coracao.width + espaco), coracaoY, cor);
+                DrawTexture(coracao, inicioX + i * (coracao.width + espaco), 650 + (85 - coracao.height) / 2, i < vida ? WHITE : Fade(WHITE, 0.2f));
             }
 
             DrawText(TextFormat("SCORE: %04d", pontuacao), 80, 70, 30, WHITE);
             DrawText(TextFormat("HI-SCORE: %04d", highScore), 80, 100, 30, GOLD);
-            //apertar M manda para o menu.
+            DesenharPainelUpgrades();
 
-            //segundo quadrado: lista de upgrades e progresso
-            DesenharPainelUpgrades(nivel, abates);
-
-            //aviso do upgrade ganho, no alto da praia (some suavemente no ultimo meio segundo)
+            //aviso no topo da tela
             if (avisoTempo > 0) {
                 float alfa = fminf(1.0f, avisoTempo / 0.5f);
-                int larguraAviso = MeasureText(avisoTexto, 28);
-                int ax = AREA_X + (AREA_LARGURA - larguraAviso) / 2;
+                int ax = AREA_X + (AREA_LARGURA - MeasureText(avisoTexto, 28)) / 2;
                 DrawText(avisoTexto, ax + 2, 62, 28, Fade(BLACK, alfa)); //sombra
                 DrawText(avisoTexto, ax, 60, 28, Fade(GOLD, alfa));
             }
 
             if (tela == TELA_PAUSE) {
-                DrawRectangle(0,0, LARGURA, ALTURA, Fade(BLACK, 0.6f));
-                DrawText("APERTE P PARA VOLTAR", (LARGURA - MeasureText("APERTE P PARA VOLTAR", 20)) / 2, 240, 20, GRAY);
+                DrawRectangle(0, 0, LARGURA, ALTURA, Fade(BLACK, 0.6f));
+                TextoMeio("APERTE P PARA VOLTAR", 240, 20, GRAY);
             }
         }
 
         else if (tela == TELA_DERROTA) {
             DrawTexture(derrota, 0, 0, WHITE);
-            DrawText("ENTER PARA VOLTAR AO MENU", (LARGURA - MeasureText("ENTER PARA VOLTAR AO MENU", 20)) / 2, 320, 20, GRAY);
+            DesenharRanking(pontuacao, baloesEstourados); //Top 5 e estatisticas da partida
+            if (popupAberto) DesenharPopupNome();
+            else if ((int)(GetTime() * 2) % 2 == 0) TextoMeio("ENTER PARA VOLTAR AO MENU", 720, 24, WHITE);
         }
-
 
     EndDrawing();
     }
-    
+
     //limpa a memoria
     UnloadTexture(sheet);
     UnloadTexture(inicial);
@@ -469,8 +283,8 @@ while (!WindowShouldClose()) {
     UnloadTexture(derrota);
     UnloadTexture(coracao);
     UnloadTexture(textDardo);
-    UnloadTexture(textExplosao);
     UnloadTexture(rostos);
+    FinalizarExplosoes();
     FinalizarBalao();
     FinalizarBoss();
     UnloadMusicStream(soundtrack);
