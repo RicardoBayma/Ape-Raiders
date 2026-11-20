@@ -22,7 +22,7 @@ typedef struct {
     float dir;
     int vida;
     int vidaMax;
-    int numero;    //qual boss é
+    int numero;    //qual boss é 1,2,3...
     float piscar;
     bool atv;
 } Boss;
@@ -87,7 +87,6 @@ static int AttBoss(float dt) {
 
     if (boss.piscar > 0) boss.piscar -= dt;
 
-    //anda de um lado pro outro
     boss.x += boss.dir * BOSS_VEL_X;
     if (boss.x < areaBoss.x) {
         boss.x = areaBoss.x;
@@ -98,7 +97,6 @@ static int AttBoss(float dt) {
         boss.dir = -1;
     }
 
-    //desce devagar. se chegar no macaco, tira uma vida e sobe de novo
     boss.y += BOSS_VEL_Y * dt;
     if (boss.y + BOSS_TAM >= linhaBoss) {
         boss.y = BOSS_Y_INICIAL;
@@ -111,7 +109,6 @@ static int AttBoss(float dt) {
 static int AcertarBoss(Rectangle hit) {
     if (!boss.atv) return BOSS_ERROU;
 
-    //hitbox
     float margem = BOSS_TAM * 0.15f;
     Rectangle corpo = { boss.x + margem, boss.y + margem, BOSS_TAM - 2 * margem, BOSS_TAM - 2 * margem };
     if (!CheckCollisionRecs(hit, corpo)) return BOSS_ERROU;
@@ -129,7 +126,7 @@ static int AcertarBoss(Rectangle hit) {
 static void DrawBoss(void) {
     if (!boss.atv) return;
 
-    Color cor = (boss.piscar > 0) ? RED : WHITE; //pisca vermelho ao levar dano
+    Color cor = (boss.piscar > 0) ? RED : WHITE;
     Rectangle origem = { 0, 0, (float)texBoss.width, (float)texBoss.height };
     DrawTexturePro(texBoss, origem, RetanguloBoss(), (Vector2){0, 0}, 0.0f, cor);
 
